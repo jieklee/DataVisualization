@@ -1,0 +1,556 @@
+<!doctype html>
+<html>
+<head>
+	<!-- python -m http.server -->
+	<meta charset="utf-8">
+	<meta name="description" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="shortcut icon" href="#"/>
+	
+	<!-- Load JS libraries: jQuery, D3 -->
+	<script src="js/jquery.min.js"></script>
+	<script src="https://cdn.bootcss.com/popper.js/1.15.0/umd/popper.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-beta/js/bootstrap.min.js"></script>
+	<script src="https://d3js.org/d3.v5.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/gh/holtzy/D3-graph-gallery@master/LIB/d3.layout.cloud.js"></script>
+
+	<script src="js/component/LDropDown.js"></script>
+	<script src="js/component/LToggle.js"></script>
+	<script src="js/component/LDynamicTf.js"></script>
+	<script src="js/component/LCheckbox.js"></script>
+
+	<!-- Scatterplot implementation -->	
+	<script src="js/preset.js"></script>
+	<script src="js/main.js"></script>
+	<script src="js/box.js"></script>
+	<script src="js/donut.js"></script>
+	<script src="js/line.js"></script>
+	<script src="js/tree.js"></script>
+	<script src="js/rigidline.js"></script>
+	<script src="js/cloud.js"></script>
+	<script src="js/scatter.js"></script>
+	<script src="js/heat.js"></script>
+	<script src="js/violin.js"></script>
+	<script src="js/stack.js"></script>
+	<title>Project</title>
+
+	<!-- Load CSS files -->
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+	<link rel="stylesheet" href="css/style.css">
+</head>
+<script>
+	var datalink = "data/Video Games Sales.csv";
+
+	d3.csv(datalink, converter).then(function(data){
+		localStorage.setItem("oridata",JSON.stringify(data));
+		localStorage.setItem("pagenum",0);
+		mapvar = mapvar();
+		setPresets();
+	});
+	
+</script>
+<body>
+	<nav class="navbar navbar-light bg-light">
+		<a class="navbar-brand" href=""  data-toggle="tooltip" data-placement="top" title="JB Terry Lin">
+			Games Publishers of the Years
+		</a>
+		<span class="navbar-text">
+			1171200748, 1171201466, 1161204459
+		</span>
+	</nav>
+	<div class="container-fluid" style="margin: 16px 0;">
+		<div class="row g-2">
+			<div class="col">
+				<label style="margin-top: 8px;">data:</label>
+				<label id="maindatatext" style="vertical-align: text-top;">full</label>
+				<button class="btn btn-primary" style="float: right;" data-toggle="collapse" data-target="#maindata" aria-expanded="true" aria-controls="collapseOne">
+					Edit
+				</button>
+				<div id="maindata" class="collapse" style="margin-top: 16px;" aria-labelledby="headingOne" data-parent="#accordion">
+					<l-dynamictf 
+						classname="maindata"
+						variableselection =	'["Rank","Game Title","Platform","Year","Genre","Publisher","North America","Europe","Japan","Rest of World","Global","Review"]'
+						operatorselection =	'[">","<","<=",">=","!=", "==", "top", "last"]'
+						beforefilterselection =	'["sum","count"]'
+						beforefiltervariableselection =	'["Rank","Game Title","Platform","Year","Genre","Publisher","North America","Europe","Japan","Rest of World","Global","Review"]'
+					/>
+					<button class="btn btn-primary" style="float:right;" onclick="mainDataFilter()">Process</button>
+				</div>
+			</div>
+
+			<div class="w-100" style="margin-top: 16px;"></div>
+
+			<div class="col-6">
+				<div class="card">
+					<div class="card-header" id="headingOne">
+						<h5 class="mb-0">
+						  <button id="stackname" class="btn btn-link" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+						  </button>
+						</h5>
+					</div>
+					<div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#accordion">
+						<div class="card-body">
+							<div class="row g-2">
+								<div class="col-6">
+									<l-dropdown 
+										classname = "stackxvariable"
+										label = "x variable"
+										selection =	'["Platform","Year","Genre","Publisher"]'
+									/>
+								</div>
+								<div class="col-6">
+									<l-checkbox 
+										classname = "stackyvariable"
+										selection = '["North America","Europe","Japan","Rest of World"]'
+									/>
+								</div>
+								<div class="w-100" style="margin-top: 8px;"></div>
+								<div class="col-6">	
+									<l-toggle 
+										classname = "stacksort"
+										label = "sort by total"
+										checked = true
+									/>
+								</div>
+								<div class="col-6">	
+									<button class="btn btn-primary" style="float:right;" onclick="stackfilter(false)">Process</button>
+								</div>
+								<div class="w-100" style="margin-top: 8px;"></div>
+								<div class="col">	
+									<l-dynamictf 
+										classname="stackdata"
+										variableselection =	'["Rank","Game Title","Platform","Year","Genre","Publisher","North America","Europe","Japan","Rest of World","Global","Review"]'
+										operatorselection =	'[">","<","<=",">=","!=", "==", "top", "last"]'
+										beforefilterselection =	'["sum","count"]'
+										beforefiltervariableselection =	'["Rank","Game Title","Platform","Year","Genre","Publisher","North America","Europe","Japan","Rest of World","Global","Review"]'
+									/>
+								</div>
+							</div>
+						</div>
+							
+					</div>
+					<ul class="list-group list-group-flush">
+						<li class="list-group-item">
+							<div id="stack-area" style="height: 100%; max-width: 100%;"></div>
+						</li>
+					</ul>
+				</div>
+					
+					<!-- <div id="violin-area" style="height: 100%; max-width: 100%"></div> -->
+					<!-- <div id="scatter-area" style="height: 100%; max-width: 100%"></div> -->
+
+			</div>
+			<div class="col-6">
+				<div class="card">
+					<div class="card-header" id="headingTwo">
+						<h5 class="mb-0">
+						<button id="donutname" class="btn btn-link" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
+						</button>
+						</h5>
+					</div>
+					<div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
+						<div class="card-body">
+							<div class="row g-2">
+								<div class="col-6">
+									<l-dropdown 
+										classname = "donutxvariable"
+										label = "x variable"
+										selection =	'["Platform","Year","Genre","Publisher"]'
+									/>
+								</div>
+								<div class="col-6">	
+									<button class="btn btn-primary" style="float:right;" onclick="donutfilter(false)">Process</button>
+								</div>
+								<div class="w-100" style="margin-top: 8px;"></div>
+								<div class="col">	
+									<l-dynamictf 
+										classname="donutdata"
+										variableselection =	'["Rank","Game Title","Platform","Year","Genre","Publisher","North America","Europe","Japan","Rest of World","Global","Review"]'
+										operatorselection =	'[">","<","<=",">=","!=", "==", "top", "last"]'
+										beforefilterselection =	'["sum","count"]'
+										beforefiltervariableselection =	'["Rank","Game Title","Platform","Year","Genre","Publisher","North America","Europe","Japan","Rest of World","Global","Review"]'
+									/>
+								</div>
+							</div>
+						</div>
+							
+					</div>
+					<ul class="list-group list-group-flush">
+						<li class="list-group-item">
+							<div id="donut-area" style="height: 100%; max-width: 100%"></div>
+						</li>
+					</ul>
+				</div>
+			</div>
+
+			<div class="w-100" style="margin-top: 16px;"></div>
+
+			<div class="col">
+				<div class="card">
+					<div class="card-header" id="headingThree">
+						<h5 class="mb-0">
+						<button id="cloudname" class="btn btn-link" data-toggle="collapse" data-target="#collapseThree" aria-expanded="true" aria-controls="collapseThree">
+						</button>
+						</h5>
+					</div>
+					<div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordion">
+						<div class="card-body">
+							<div class="row g-2">
+								<div class="col-6">
+									<l-dropdown 
+										classname = "cloudxvariable"
+										label = "x variable"
+										selection =	'["Rank","Game Title","Platform","Year","Genre","Publisher"]'
+									/>
+								</div>
+								<div class="col-6">
+									<l-dropdown 
+										classname = "cloudyvariable"
+										label = "y variable"
+										selection =	'["North America","Europe","Japan","Rest of World","Global","Review"]'
+									/>
+								</div>
+								<div class="w-100" style="margin-top: 8px;"></div>
+								<div class="col-6">
+								</div>
+								<div class="col-6">	
+									<button class="btn btn-primary" style="float:right;" onclick="cloudfilter(false)">Process</button>
+								</div>
+								<div class="w-100" style="margin-top: 8px;"></div>
+								<div class="col">	
+									<l-dynamictf 
+										classname="clouddata"
+										variableselection =	'["Rank","Game Title","Platform","Year","Genre","Publisher","North America","Europe","Japan","Rest of World","Global","Review"]'
+										operatorselection =	'[">","<","<=",">=","!=", "==", "top", "last"]'
+										beforefilterselection =	'["sum","count"]'
+										beforefiltervariableselection =	'["Rank","Game Title","Platform","Year","Genre","Publisher","North America","Europe","Japan","Rest of World","Global","Review"]'
+									/>
+								</div>
+							</div>
+						</div>
+							
+					</div>
+					<ul class="list-group list-group-flush">
+						<li class="list-group-item">
+							<div id="cloud-area" style="height: 100%; max-width: 100%"></div>
+						</li>
+					</ul>
+				</div>
+			</div>
+
+			<div class="w-100" style="margin-top: 16px;"></div>
+
+			<div class="col-6">
+				<div class="card">
+					<div class="card-header" id="headingFour">
+						<h5 class="mb-0">
+						<button id="linename" class="btn btn-link" data-toggle="collapse" data-target="#collapseFour" aria-expanded="true" aria-controls="collapseFour">
+						</button>
+						</h5>
+					</div>
+					<div id="collapseFour" class="collapse" aria-labelledby="headingFour" data-parent="#accordion">
+						<div class="card-body">
+							<div class="row g-2">
+								<div class="col-6">
+									<l-dropdown 
+										classname = "linexvariable"
+										label = "x variable"
+										selection =	'["Year"]'
+									/>
+								</div>
+								<div class="col-6">
+									<l-dropdown 
+										classname = "lineyvariable"
+										label = "y variable"
+										selection =	'["Platform","Year","Genre","Publisher"]'
+									/>
+								</div>
+								<div class="w-100" style="margin-top: 8px;"></div>
+								<div class="col-6">	
+									<l-toggle 
+										classname = "lineparallel"
+										label = "is parallel"
+										checked = true
+									/>
+								</div>
+								<div class="col-6">	
+									<button class="btn btn-primary" style="float:right;" onclick="linefilter(false)">Process</button>
+								</div>
+								<div class="w-100" style="margin-top: 8px;"></div>
+								<div class="col">	
+									<l-dynamictf 
+										classname="linedata"
+										variableselection =	'["Rank","Game Title","Platform","Year","Genre","Publisher","North America","Europe","Japan","Rest of World","Global","Review"]'
+										operatorselection =	'[">","<","<=",">=","!=", "==", "top", "last"]'
+										beforefilterselection =	'["sum","count"]'
+										beforefiltervariableselection =	'["Rank","Game Title","Platform","Year","Genre","Publisher","North America","Europe","Japan","Rest of World","Global","Review"]'
+									/>
+								</div>
+							</div>
+						</div>
+							
+					</div>
+					<ul class="list-group list-group-flush">
+						<li class="list-group-item">
+							<div>
+								<div id="line-area" style="height: 100%; max-width: 100%;"></div>
+							</div>
+						</li>
+					</ul>
+				</div>
+			</div>
+			<div class="col-6">
+				<div class="card">
+					<div class="card-header" id="headingFive">
+						<h5 class="mb-0">
+						<button id="heatname" class="btn btn-link" data-toggle="collapse" data-target="#collapseFive" aria-expanded="true" aria-controls="collapseFive">
+						</button>
+						</h5>
+					</div>
+					<div id="collapseFive" class="collapse" aria-labelledby="headingFive" data-parent="#accordion">
+						<div class="card-body">
+							<div class="row g-2">
+								<div class="col-6">
+									<l-dropdown 
+										classname = "heatxvariable"
+										label = "x variable"
+										selection =	'["Platform","Year","Genre","Publisher"]'
+									/>
+								</div>
+								<div class="col-6">
+									<l-dropdown 
+										classname = "heatyvariable"
+										label = "y variable"
+										selection =	'["Platform","Year","Genre","Publisher"]'
+									/>
+								</div>
+								<div class="w-100" style="margin-top: 8px;"></div>
+								<div class="col-6">	
+								</div>
+								<div class="col-6">	
+									<button class="btn btn-primary" style="float:right;" onclick="heatfilter(false)">Process</button>
+								</div>
+								<div class="w-100" style="margin-top: 8px;"></div>
+								<div class="col">	
+									<l-dynamictf 
+										classname="heatdata"
+										variableselection =	'["Rank","Game Title","Platform","Year","Genre","Publisher","North America","Europe","Japan","Rest of World","Global","Review"]'
+										operatorselection =	'[">","<","<=",">=","!=", "==", "top", "last"]'
+										beforefilterselection =	'["sum","count"]'
+										beforefiltervariableselection =	'["Rank","Game Title","Platform","Year","Genre","Publisher","North America","Europe","Japan","Rest of World","Global","Review"]'
+									/>
+								</div>
+							</div>
+						</div>
+					</div>
+					<ul class="list-group list-group-flush">
+						<li class="list-group-item">
+							<div id="heat-area" style="height: 100%; max-width: 100%"></div>
+						</li>
+					</ul>
+				</div>
+				<!-- <div id="rigidline-area" style="height: 100%; max-width: 100%"></div> -->
+			</div>
+
+			<div class="w-100" style="margin-top: 16px;"></div>
+
+			<div class="col">
+				<div class="card">
+					<div class="card-header" id="headingSix">
+						<h5 class="mb-0">
+						<button id="treename" class="btn btn-link" data-toggle="collapse" data-target="#collapseSix" aria-expanded="true" aria-controls="collapseSix">
+						</button>
+						</h5>
+					</div>
+					<div id="collapseSix" class="collapse" aria-labelledby="headingSix" data-parent="#accordion">
+						<div class="card-body">
+							<div class="row g-2">
+								<div class="col-6">
+									<l-dropdown 
+										classname = "treegroupvariable"
+										label = "group variable"
+										selection =	'["Platform","Year","Genre","Publisher"]'
+									/>
+								</div>
+								<div class="col-6">
+									<l-dropdown 
+										classname = "treeopacityvariable"
+										label = "opacity variable"
+										selection =	'["Rank","Year", "North America","Europe","Japan","Rest of World","Global","Review"]'
+									/>
+								</div>
+								<div class="col-6">
+									<l-dropdown 
+										classname = "treeh1variable"
+										label = "h1 variable"
+										selection =	'["Rank","Game Title","Platform","Year","Genre","Publisher","North America","Europe","Japan","Rest of World","Global","Review"]'
+									/>
+								</div>
+								<div class="col-6">
+									<!-- <l-dropdown 
+										classname = "treeh2variable"
+										label = "h2 variable"
+										selection =	'["Rank","Game Title","Platform","Year","Genre","Publisher","North America","Europe","Japan","Rest of World","Global","Review"]'
+									/> -->
+								</div>
+								<div class="w-100" style="margin-top: 8px;"></div>
+								<div class="col-6">	
+								</div>
+								<div class="col-6">	
+									<button class="btn btn-primary" style="float:right;" onclick="treefilter(false)">Process</button>
+								</div>
+								<div class="w-100" style="margin-top: 8px;"></div>
+								<div class="col">	
+									<l-dynamictf 
+										classname="treedata"
+										variableselection =	'["Rank","Game Title","Platform","Year","Genre","Publisher","North America","Europe","Japan","Rest of World","Global","Review"]'
+										operatorselection =	'[">","<","<=",">=","!=", "==", "top", "last"]'
+										beforefilterselection =	'["sum","count"]'
+										beforefiltervariableselection =	'["Rank","Game Title","Platform","Year","Genre","Publisher","North America","Europe","Japan","Rest of World","Global","Review"]'
+									/>
+								</div>
+							</div>
+						</div>
+					</div>
+					<ul class="list-group list-group-flush">
+						<li class="list-group-item">
+							<div id="tree-area" style="height: 100%; max-width: 100%"></div>
+						</li>
+					</ul>
+				</div>
+				<!-- <div id="rigidline-area" style="height: 100%; max-width: 100%"></div> -->
+			</div>
+
+			<div class="w-100" style="margin-top: 16px;"></div>
+
+			<div class="col-6">
+				<div class="card">
+					<div class="card-header" id="headingSeven">
+						<h5 class="mb-0">
+						<button id="rigidlinename" class="btn btn-link" data-toggle="collapse" data-target="#collapseSeven" aria-expanded="true" aria-controls="collapseSeven">
+						</button>
+						</h5>
+					</div>
+					<div id="collapseSeven" class="collapse" aria-labelledby="headingSeven" data-parent="#accordion">
+						<div class="card-body">
+							<div class="row g-2">
+								<div class="col-6">
+									<l-dropdown 
+										classname = "rigidlinexvariable"
+										label = "x variable"
+										selection =	'["Rank","Year"]'
+									/>
+								</div>
+								<div class="col-6">
+									<l-dropdown 
+										classname = "rigidlineyvariable"
+										label = "y variable"
+										selection =	'["Publisher","Platform","Year","Genre"]'
+									/>
+								</div>
+								<div class="w-100" style="margin-top: 8px;"></div>
+								<div class="col-6">	
+								</div>
+								<div class="col-6">	
+									<button class="btn btn-primary" style="float:right;" onclick="rigidlinefilter(false)">Process</button>
+								</div>
+								<div class="w-100" style="margin-top: 8px;"></div>
+								<div class="col">	
+									<l-dynamictf 
+										classname="rigidlinedata"
+										variableselection =	'["Rank","Game Title","Platform","Year","Genre","Publisher","North America","Europe","Japan","Rest of World","Global","Review"]'
+										operatorselection =	'[">","<","<=",">=","!=", "==", "top", "last"]'
+										beforefilterselection =	'["sum","count"]'
+										beforefiltervariableselection =	'["Rank","Game Title","Platform","Year","Genre","Publisher","North America","Europe","Japan","Rest of World","Global","Review"]'
+									/>
+								</div>
+							</div>
+						</div>
+					</div>
+					<ul class="list-group list-group-flush">
+						<li class="list-group-item">
+							<div id="rigidline-area" style="height: 100%; max-width: 100%"></div>
+						</li>
+					</ul>
+				</div>
+			</div>
+			<div class="col-6">
+				<div class="card">
+					<div class="card-header" id="headingEight">
+						<h5 class="mb-0">
+						<button id="scattername" class="btn btn-link" data-toggle="collapse" data-target="#collapseEight" aria-expanded="true" aria-controls="collapseEight">
+						</button>
+						</h5>
+					</div>
+					<div id="collapseEight" class="collapse" aria-labelledby="headingEight" data-parent="#accordion">
+						<div class="card-body">
+							<div class="row g-2">
+								<div class="col-6">
+									<l-dropdown 
+										classname = "scatterxvariable"
+										label = "x variable"
+										selection =	'["North America","Europe","Japan","Rest of World","Global","Review"]'
+									/>
+								</div>
+								<div class="col-6">
+									<l-dropdown 
+										classname = "scatteryvariable"
+										label = "y variable"
+										selection =	'["North America","Europe","Japan","Rest of World","Global","Review"]'
+									/>
+								</div>
+								<div class="w-100" style="margin-top: 8px;"></div>
+								<div class="col-6">
+									<l-dropdown 
+										classname = "scattercolorvariable"
+										label = "color variable"
+										selection =	'["Platform","Year","Genre","Publisher"]'
+									/>
+								</div>
+								<div class="col-6">
+									<l-dropdown 
+										classname = "scattersizevariable"
+										label = "size variable"
+										selection =	'["Global","North America","Europe","Japan","Rest of World","Review"]'
+									/>
+								</div>
+								<div class="w-100" style="margin-top: 8px;"></div>
+								<div class="col-6">
+									<l-toggle 
+										classname = "scatterenablecolor"
+										label = "enable color"
+										checked = true
+									/>
+									<l-toggle 
+										classname = "scatterenablesize"
+										label = "enable size"
+										checked = true
+									/>
+								</div>
+								<div class="col-6">	
+									<button class="btn btn-primary" style="float:right;" onclick="scatterfilter(false)">Process</button>
+								</div>
+								<div class="w-100" style="margin-top: 8px;"></div>
+								<div class="col">	
+									<l-dynamictf 
+										classname="scatterdata"
+										variableselection =	'["Rank","Game Title","Platform","Year","Genre","Publisher","North America","Europe","Japan","Rest of World","Global","Review"]'
+										operatorselection =	'[">","<","<=",">=","!=", "==", "top", "last"]'
+										beforefilterselection =	'["sum","count"]'
+										beforefiltervariableselection =	'["Rank","Game Title","Platform","Year","Genre","Publisher","North America","Europe","Japan","Rest of World","Global","Review"]'
+									/>
+								</div>
+							</div>
+						</div>
+					</div>
+					<ul class="list-group list-group-flush">
+						<li class="list-group-item">
+							<div id="scatter-area" style="height: 100%; max-width: 100%"></div>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
